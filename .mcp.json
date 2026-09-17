@@ -11,19 +11,26 @@
     "playwright": {
       "type": "stdio",
       "command": "npx",
-      "args": ["-y", "@playwright/mcp@latest"],
+      "args": [
+        "-y",
+        "@playwright/mcp@latest"
+      ],
       "env": {}
     },
     "chrome-devtools": {
       "type": "stdio",
       "command": "npx",
-      "args": ["chrome-devtools-mcp@latest"],
+      "args": [
+        "chrome-devtools-mcp@latest"
+      ],
       "env": {}
     },
     "microsoft/markitdown": {
       "type": "stdio",
       "command": "uvx",
-      "args": ["markitdown-mcp@0.0.1a4"],
+      "args": [
+        "markitdown-mcp@0.0.1a4"
+      ],
       "gallery": "https://api.mcp.github.com",
       "version": "1.0.0"
     },
@@ -47,7 +54,12 @@
     },
     "devspeak": {
       "command": "npx",
-      "args": ["-y", "-p", "@devspeak/mcp", "devspeak-mcp"],
+      "args": [
+        "-y",
+        "-p",
+        "@devspeak/mcp",
+        "devspeak-mcp"
+      ],
       "env": {
         "DEVSPEAK_API_KEY": "$DEVSPEAK_API_KEY"
       }
