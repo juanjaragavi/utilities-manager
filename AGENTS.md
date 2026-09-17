@@ -53,6 +53,15 @@ It is a long structured document with a table of contents whose anchors must sta
 
 Prefer targeted string edits over rewriting the file.
 
-## Customization directories
+## Skills
 
-`.github/{agents,prompts,skills}/` and `.agents/{agents,prompts,skills}/` exist but are empty. `.agents/` is a copy of `.github/`. If you add a customization, put it in `.github/` and mirror it only if asked.
+Four generic skills are vendored from `../devspeak/.github/skills/`, chosen because they match what this repo does — making verifiable claims about code that lives elsewhere:
+
+| Skill                            | Use when                                            |
+| -------------------------------- | --------------------------------------------------- |
+| `writing-for-agents`             | Editing `AGENTS.md`, `CLAUDE.md`, or any skill      |
+| `verification-before-completion` | About to claim something passes, works, or is done  |
+| `markdown-documentation`         | Writing or restructuring `README.md`                |
+| `full-output-enforcement`        | Producing long documents that must not be truncated |
+
+They are vendored copies with no DevSpeak-specific content. `.agents/skills/` is a byte-identical mirror of `.github/skills/` — update both or neither. Put any new customization in `.github/` first.

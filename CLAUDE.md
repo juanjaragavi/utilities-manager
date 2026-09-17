@@ -22,9 +22,22 @@ AGENTS.md            Agent instructions. Keep in sync with this file.
 CLAUDE.md            This file.
 .mcp.json            MCP server config (github, context7, playwright, devspeak, …).
 lib/documents/       notes.md — local absolute paths to sibling repos. GITIGNORED.
-.github/{agents,prompts,skills}/    Empty. Put new customizations here.
-.agents/{agents,prompts,skills}/    Empty. A copy of .github/; mirror only if asked.
+.github/skills/      Four skills, copied from devspeak. See Skills below.
+.agents/skills/      Byte-identical mirror of .github/skills/.
 ```
+
+### Skills
+
+Four generic skills are vendored from `../devspeak/.github/skills/`, chosen because they match what this repo actually does — making verifiable claims about code that lives elsewhere:
+
+| Skill                            | Use when                                            |
+| -------------------------------- | --------------------------------------------------- |
+| `writing-for-agents`             | Editing `CLAUDE.md`, `AGENTS.md`, or any skill      |
+| `verification-before-completion` | About to claim something passes, works, or is done  |
+| `markdown-documentation`         | Writing or restructuring `README.md`                |
+| `full-output-enforcement`        | Producing long documents that must not be truncated |
+
+They contain no DevSpeak-specific content. `.agents/skills/` must stay byte-identical to `.github/skills/` — update both or neither.
 
 ### The repositories this hub coordinates
 
