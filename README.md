@@ -42,7 +42,7 @@ Use these as templates for billing, payment methods, architecture, design patter
 | [devspeak](https://github.com/juanjaragavi/devspeak)           | **Primary reference.** The only codebase in the portfolio with working payments, entitlements, quota metering, RBAC, AI-crawler SEO, i18n enforcement, and multi-channel distribution. |
 | [talentassisto](https://github.com/juanjaragavi/talentassisto) | **Secondary reference.** Better i18n runtime model and test-config hygiene than DevSpeak. No payments — do not use it as a billing reference.                                          |
 
-Local checkout paths are recorded in [lib/documents/notes.md](lib/documents/notes.md).
+All six repositories are expected to be cloned as siblings of this one. Local checkout paths are kept in `lib/documents/notes.md`, which is intentionally untracked.
 
 ---
 
