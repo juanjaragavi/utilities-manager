@@ -22,13 +22,15 @@ AGENTS.md            Agent instructions. Keep in sync with this file.
 CLAUDE.md            This file.
 .mcp.json            MCP server config (github, context7, playwright, devspeak, …).
 lib/documents/       notes.md — local absolute paths to sibling repos. GITIGNORED.
-.github/skills/      Four skills, copied from devspeak. See Skills below.
+.github/skills/      Seven vendored skills. See Skills below.
 .agents/skills/      Byte-identical mirror of .github/skills/.
 ```
 
 ### Skills
 
-Four generic skills are vendored from `../devspeak/.github/skills/`, chosen because they match what this repo actually does — making verifiable claims about code that lives elsewhere:
+Seven vendored skills, in two groups. All are generic — none contain repo-specific content.
+
+**Documentation — writing verifiable claims about code that lives elsewhere:**
 
 | Skill                            | Use when                                            |
 | -------------------------------- | --------------------------------------------------- |
@@ -37,7 +39,17 @@ Four generic skills are vendored from `../devspeak/.github/skills/`, chosen beca
 | `markdown-documentation`         | Writing or restructuring `README.md`                |
 | `full-output-enforcement`        | Producing long documents that must not be truncated |
 
-They contain no DevSpeak-specific content. `.agents/skills/` must stay byte-identical to `.github/skills/` — update both or neither.
+**Exploration — reading the six sibling repos, which is where all the code is:**
+
+| Skill                  | Use when                                                          |
+| ---------------------- | ----------------------------------------------------------------- |
+| `codebase-exploration` | Answering "where is X?" across a sibling repo; three depth levels |
+| `codebase-search`      | Tracing calls, pattern matching, locating implementations         |
+| `context-map`          | Mapping every relevant file before a multi-file change            |
+
+The exploration skills reference `fd` and `ast-grep`, **neither of which is installed on this machine**. `rg` is available. Substitute `find` for `fd`, and `rg` for `ast-grep` structural patterns, or install the tools.
+
+`.agents/skills/` must stay byte-identical to `.github/skills/` — update both or neither.
 
 ### The repositories this hub coordinates
 
