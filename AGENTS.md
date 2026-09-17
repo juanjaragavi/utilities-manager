@@ -25,9 +25,9 @@ npm run lint      # prettier --check .
 npm run format    # prettier --write .
 ```
 
-`lint` currently fails on `.mcp.json`, `package.json`, and `package-lock.json`. That is pre-existing drift, not something you introduced — fix it only if the task is about formatting, and never sweep it into an unrelated commit.
+`lint` must pass before you commit. Keep formatting fixes in their own commit; never sweep them into an unrelated change.
 
-There is no prettier config file; defaults apply. Note that prettier keeps short JSON arrays inline (`"args": ["-y", "@playwright/mcp@latest"]`), so an editor that reflows them one-per-line will fight `lint`.
+There is no prettier config file; defaults apply. Prettier keeps short JSON arrays inline (`"args": ["-y", "@playwright/mcp@latest"]`), so an editor that reflows them one-per-line will fight `lint` — this has already broken the gate once.
 
 ## Conventions
 
