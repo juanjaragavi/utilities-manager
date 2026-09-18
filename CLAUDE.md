@@ -22,9 +22,15 @@ AGENTS.md            Agent instructions. Keep in sync with this file.
 CLAUDE.md            This file.
 .mcp.json            MCP server config (github, context7, playwright, devspeak, …).
 lib/documents/       notes.md — local absolute paths to sibling repos. GITIGNORED.
-.github/skills/      Seven vendored skills. See Skills below.
-.agents/skills/      Byte-identical mirror of .github/skills/.
+.github/skills/      Eight vendored skills. See Skills below.
+.github/agents/      utilities-gm.agent.md — cross-repo General Manager.
+.agents/{skills,agents}/   Byte-identical mirror of the .github/ equivalents.
+skills-lock.json     Written by `npx skills add`. Tracks vendored skill hashes.
 ```
+
+### Agents
+
+`utilities-gm.agent.md` — General Manager for the four utility repos. Use it when a task spans more than one utility, when you need to know how a pattern differs between them, or when executing a roadmap phase. It is required reading order is: hub `README.md` → target repo `AGENTS.md` → that repo's own skills. It will not commit or push in a sibling repo without approval.
 
 ### Skills
 
@@ -46,8 +52,9 @@ Seven vendored skills, in two groups. All are generic — none contain repo-spec
 | `codebase-exploration` | Answering "where is X?" across a sibling repo; three depth levels |
 | `codebase-search`      | Tracing calls, pattern matching, locating implementations         |
 | `context-map`          | Mapping every relevant file before a multi-file change            |
+| `ast-grep`             | Structural (AST) search and codemods across a sibling repo        |
 
-The exploration skills reference `fd` and `ast-grep`, **neither of which is installed on this machine**. `rg` is available. Substitute `find` for `fd`, and `rg` for `ast-grep` structural patterns, or install the tools.
+`rg` and `ast-grep` are installed. **`fd` is not** — substitute `find` where these skills reference it.
 
 `.agents/skills/` must stay byte-identical to `.github/skills/` — update both or neither.
 

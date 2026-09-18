@@ -73,7 +73,12 @@ Seven vendored skills, in two groups. All are generic — none contain repo-spec
 | `codebase-exploration` | Answering "where is X?" across a sibling repo; three depth levels |
 | `codebase-search`      | Tracing calls, pattern matching, locating implementations         |
 | `context-map`          | Mapping every relevant file before a multi-file change            |
+| `ast-grep`             | Structural (AST) search and codemods across a sibling repo        |
 
-The exploration skills reference `fd` and `ast-grep`, **neither of which is installed on this machine**. `rg` is available. Substitute `find` for `fd`, and `rg` for `ast-grep` structural patterns, or install the tools.
+`rg` and `ast-grep` are installed. **`fd` is not** — substitute `find` where these skills reference it.
 
-`.agents/skills/` is a byte-identical mirror of `.github/skills/` — update both or neither. Put any new customization in `.github/` first.
+## Agents
+
+`.github/agents/utilities-gm.agent.md` — General Manager for the four utility repos. Use it when a task spans more than one utility, when you need to know how a pattern differs between them, or when executing a roadmap phase. Its reading order is: hub `README.md` → target repo `AGENTS.md` → that repo's own skills. It will not commit or push in a sibling repo without approval.
+
+`.agents/` is a byte-identical mirror of `.github/` — update both or neither. Put any new customization in `.github/` first.
