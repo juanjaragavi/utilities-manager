@@ -71,16 +71,16 @@ Byte-identical or near-identical across all four — the high-value dedup target
 
 ### What is missing in all four
 
-| Gap                       | Status                                                                                                                                                   |
-| ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Payments**              | No provider anywhere. No Stripe/Dodo/Paddle/Lemon dependency in any repo.                                                                                |
-| **Enforced entitlements** | None. See breakdown below.                                                                                                                               |
-| **CI**                    | No build/lint/test workflow. Only `agent-spec-smith/.github/workflows/keep-supabase-warm.yml` (cron keeping all four Supabase free-tier projects alive). |
-| **Tests**                 | Only `prompt-craft-smith` has any — 12 Vitest files, no `test` script, not gated.                                                                        |
-| **`typecheck` script**    | Absent in all four.                                                                                                                                      |
-| **i18n**                  | Absent in all four. All UI strings are hardcoded English. Violates the standing localization rule.                                                       |
-| **Observability**         | No Sentry, no PostHog, no analytics.                                                                                                                     |
-| **SEO for AI crawlers**   | These are client-rendered SPAs. AI crawlers execute no JavaScript, so today they see an empty page.                                                      |
+| Gap                       | Status                                                                                                                                                                                               |
+| ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Payments**              | No provider anywhere. No Stripe/Dodo/Paddle/Lemon dependency in any repo.                                                                                                                            |
+| **Enforced entitlements** | None. See breakdown below.                                                                                                                                                                           |
+| **CI**                    | ~~None.~~ **Phase 0 added `ci.yml` to all four** (lint → typecheck → test → build). `agent-spec-smith` also has `keep-supabase-warm.yml`, a cron keeping the four Supabase free-tier projects alive. |
+| **Tests**                 | Only `prompt-craft-smith` has any — **85 tests across 12 files, now gated in CI**. The other three have no runner.                                                                                   |
+| **`typecheck` script**    | ~~Absent in all four.~~ **Added to all four in Phase 0.** Hard gate in three; ratcheted in `prompt-craft-smith`.                                                                                     |
+| **i18n**                  | Absent in all four. All UI strings are hardcoded English. Violates the standing localization rule.                                                                                                   |
+| **Observability**         | No Sentry, no PostHog, no analytics.                                                                                                                                                                 |
+| **SEO for AI crawlers**   | These are client-rendered SPAs. AI crawlers execute no JavaScript, so today they see an empty page.                                                                                                  |
 
 ### Entitlement scaffolding, ranked
 
@@ -207,12 +207,35 @@ Ordered by dependency. Each phase gates the next.
 
 Nothing below is safe without this. A merge touching auth, RLS, and a unified `documents` table currently has essentially zero automated verification.
 
-- [ ] Add `typecheck` (`tsc --noEmit`) script to all four
-- [ ] Add `test` script to all four; promote `prompt-craft-smith`'s 12 Vitest files into a gated suite
-- [ ] Add a shared CI workflow: typecheck → lint → test → build, no path filter
-- [ ] Resolve the lockfile conflict — pick one package manager, delete the loser, correct every `AGENTS.md`
-- [ ] Audit `prompt-craft-smith/.env.backup-lovable` for live secrets before any repo merge
+**Status: 5 of 6 complete.** Changes are staged in the four repos but **not yet committed** — see [Phase 0 execution log](#phase-0-execution-log).
+
+- [x] Add `typecheck` (`tsc --noEmit`) script to all four
+- [x] Add `test` script; promote `prompt-craft-smith`'s Vitest files into a gated suite — **85 tests across 12 files, all passing**
+- [x] Add a shared CI workflow: lint → typecheck → test → build, no path filter
+- [x] Resolve the lockfile conflict — **bun is canonical**; `package-lock.json` deleted in all four, every `AGENTS.md` corrected
+- [x] Audit `prompt-craft-smith/.env.backup-lovable` — **live secrets found in pushed history; rotation deferred by owner**
 - [ ] Port DevSpeak's Zod env validator (`src/env.ts` + `src/validate-env.ts`) into `prebuild` for all four
+
+#### Phase 0 execution log
+
+**Package manager: bun.** Decided 2026-09-17. `bun install` generated `bun.lock` in all four; the stale `package-lock.json` was removed from each. `dev-text-forge` had carried both. Note the local `bun` on `PATH` (`~/Library/pnpm/bun`) is a broken pnpm shim that exits 0 silently — the real binary is `~/.bun/bin/bun` (1.2.7).
+
+**Typecheck baseline**, measured after a fresh `bun install` in each repo (`node_modules` was absent in all four):
+
+| Repo                 | Type errors before | After | Gate                    |
+| -------------------- | ------------------ | ----- | ----------------------- |
+| `agent-spec-smith`   | 1                  | **0** | hard                    |
+| `safe-prompt-engine` | 0                  | **0** | hard                    |
+| `dev-text-forge`     | 0                  | **0** | hard                    |
+| `prompt-craft-smith` | 131                | 131   | **ratchet** (see below) |
+
+`agent-spec-smith`'s single error was fixed in `src/lib/task-spec-policy.ts` — `PolicyFinding.id` became `string | undefined`, matching the convention its own `AGENTS.md` documents for `exactOptionalPropertyTypes`.
+
+`prompt-craft-smith`'s 131 errors are **not** 131 bugs: 107 are `TS4111` from `noPropertyAccessFromIndexSignature`, a mechanical `obj.key` → `obj["key"]` rewrite, concentrated in `LocalTools.tsx` (61) and `workspace-data.test.ts` (33). A hard gate would block every PR, so CI compares against `.tsc-baseline` and fails only if the count **rises**. Lower the baseline as errors are fixed.
+
+**CI** is `.github/workflows/ci.yml` in each repo: `bun install --frozen-lockfile` → lint → typecheck → test (where it exists) → build, on push to `main` and every PR, no path filter, `cancel-in-progress` concurrency. Every step was verified locally with bun in all four repos before commit; all pass.
+
+**Still open:** the env-validator item, and the deferred key rotation (Blocker #9).
 
 ### Phase 1 — Schema convergence
 
@@ -315,17 +338,17 @@ Also: `devspeak/.github/workflows/web-ci.yml` · `scripts/sync-versions.mjs` · 
 
 ## Known Blockers
 
-| #   | Blocker                                        | Impact                                                                                                  |
-| --- | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| 1   | **Four separate Supabase projects**            | Four auth pools. Consolidation means a user-identity merge, not just a schema merge.                    |
-| 2   | **`documents` defined four incompatible ways** | The single largest schema-merge task. `source_tool` is the natural discriminator.                       |
-| 3   | **Trigger function name conflict**             | `update_updated_at_column()` vs `set_updated_at()`. Pick one before squashing migrations.               |
-| 4   | **Billing must be built from scratch**         | No provider in any of the four. Only `prompt-craft-smith`'s `usage_events` is reusable.                 |
-| 5   | **No test safety net**                         | 12 test files in one of four repos, no CI, no `typecheck`. Phase 0 exists to fix this first.            |
-| 6   | **i18n absent everywhere**                     | Greenfield workstream across four apps of hardcoded English.                                            |
-| 7   | **SPAs are invisible to AI crawlers**          | Blocks the marketing thesis until Phase 5 ships.                                                        |
-| 8   | **Lockfile drift**                             | `dev-text-forge` carries both `bun.lock` and `package-lock.json`, and its `AGENTS.md` claims otherwise. |
-| 9   | **`.env.backup-lovable`**                      | Present only in `prompt-craft-smith`. Audit for live keys before any merge.                             |
+| #   | Blocker                                        | Impact                                                                                                                                                                                                                                                                                                                                      |
+| --- | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | **Four separate Supabase projects**            | Four auth pools. Consolidation means a user-identity merge, not just a schema merge.                                                                                                                                                                                                                                                        |
+| 2   | **`documents` defined four incompatible ways** | The single largest schema-merge task. `source_tool` is the natural discriminator.                                                                                                                                                                                                                                                           |
+| 3   | **Trigger function name conflict**             | `update_updated_at_column()` vs `set_updated_at()`. Pick one before squashing migrations.                                                                                                                                                                                                                                                   |
+| 4   | **Billing must be built from scratch**         | No provider in any of the four. Only `prompt-craft-smith`'s `usage_events` is reusable.                                                                                                                                                                                                                                                     |
+| 5   | ~~**No test safety net**~~                     | **Resolved in Phase 0.** CI added to all four; `typecheck` everywhere; 85 tests gated in `prompt-craft-smith`. `prompt-craft-smith` types are on a ratchet, not a hard gate.                                                                                                                                                                |
+| 6   | **i18n absent everywhere**                     | Greenfield workstream across four apps of hardcoded English.                                                                                                                                                                                                                                                                                |
+| 7   | **SPAs are invisible to AI crawlers**          | Blocks the marketing thesis until Phase 5 ships.                                                                                                                                                                                                                                                                                            |
+| 8   | ~~**Lockfile drift**~~                         | **Resolved in Phase 0.** bun is canonical; `package-lock.json` removed from all four; every `AGENTS.md` corrected.                                                                                                                                                                                                                          |
+| 9   | 🔴 **Leaked API keys in pushed history**       | `prompt-craft-smith@f992110` committed `.env.backup-lovable`. `ANTHROPIC_API_KEY`, `DEEPSEEK_API_KEY`, and `NVIDIA_API_KEY` are byte-identical to the live values today. Repo is private, so not a public leak. **Rotation deferred by owner.** Rotate before scrubbing history — scrubbing first leaves live keys in every existing clone. |
 
 ### Operational notes carried forward
 
