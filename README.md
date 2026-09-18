@@ -207,14 +207,14 @@ Ordered by dependency. Each phase gates the next.
 
 Nothing below is safe without this. A merge touching auth, RLS, and a unified `documents` table currently has essentially zero automated verification.
 
-**Status: 5 of 6 complete and pushed.** ⚠️ The CI workflows are committed but **cannot start** — GitHub Actions returns `startup_failure` in all four repos for an account-level reason, so no gate is enforcing yet. See [Phase 0 execution log](#phase-0-execution-log).
+**Status: all 6 items complete and pushed.** ⚠️ But the CI workflows **cannot start** — GitHub Actions returns `startup_failure` in all four repos for an account-level reason, so the lint/typecheck/test gates are not enforcing yet. The env validator _is_ live, because it runs inside the Vercel build rather than in Actions. See [Phase 0 execution log](#phase-0-execution-log).
 
 - [x] Add `typecheck` (`tsc --noEmit`) script to all four
 - [x] Add `test` script; promote `prompt-craft-smith`'s Vitest files into a gated suite — **85 tests across 12 files, all passing**
 - [x] Add a shared CI workflow: lint → typecheck → test → build, no path filter
 - [x] Resolve the lockfile conflict — **bun is canonical**; `package-lock.json` deleted in all four, every `AGENTS.md` corrected
 - [x] Audit `prompt-craft-smith/.env.backup-lovable` — **live secrets found in pushed history; rotation deferred by owner**
-- [ ] Port DevSpeak's Zod env validator (`src/env.ts` + `src/validate-env.ts`) into `prebuild` for all four
+- [x] Port DevSpeak's Zod env validator (`src/env.ts` + `src/validate-env.ts`) into `prebuild` for all four
 
 #### Phase 0 execution log
 
@@ -250,7 +250,17 @@ A no-op workflow cannot fail for authoring reasons, so the cause is account- or 
 
 **Consequence:** the CI gates are committed and every step passes locally and on Vercel, but **no gate is actually enforcing yet.** Phase 0's safety net is not live until Actions runs.
 
-**Still open:** the env-validator item, the Actions billing question, and the deferred key rotation (Blocker #9).
+**Env validation** is `src/env.ts` + `src/validate-env.ts` in each repo, wired into `prebuild`. **Confirmed running in production** — the Vercel build log shows `bun run validate-env` → `Environment configuration OK`.
+
+Three decisions worth carrying into later phases:
+
+- **Blank-string normalization is the point.** Vercel stores a defined-but-empty variable as `""`, which a plain `.optional()` accepts and hands to a client expecting a real value. Every optional field preprocesses `""` → `undefined` first. Verified: blanking `SUPABASE_URL` exits 1 in all four.
+- **No new dependencies.** bun runs the TypeScript directly and loads `.env` natively, so neither `tsx` nor `dotenv` was added. Confirmed beforehand that bun honours the `prebuild` lifecycle hook — without that the validator would have silently never run.
+- **Only startup-critical vars are required.** AI provider keys stay optional because each repo's provider chain falls through and surfaces a friendly runtime error; requiring them would break local builds for no safety gain.
+
+`prompt-craft-smith` already had `src/lib/env.server.ts`, a **runtime** loader that merges `.env` into `process.env` during `vite dev`. It does not validate, so the new build-time schema is additive; both files note the distinction.
+
+**Still open:** the Actions billing question (Blocker #10) and the deferred key rotation (Blocker #9).
 
 ### Phase 1 — Schema convergence
 
