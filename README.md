@@ -207,7 +207,7 @@ Ordered by dependency. Each phase gates the next.
 
 Nothing below is safe without this. A merge touching auth, RLS, and a unified `documents` table currently has essentially zero automated verification.
 
-**Status: 5 of 6 complete.** Changes are staged in the four repos but **not yet committed** — see [Phase 0 execution log](#phase-0-execution-log).
+**Status: 5 of 6 complete and pushed.** ⚠️ The CI workflows are committed but **cannot start** — GitHub Actions returns `startup_failure` in all four repos for an account-level reason, so no gate is enforcing yet. See [Phase 0 execution log](#phase-0-execution-log).
 
 - [x] Add `typecheck` (`tsc --noEmit`) script to all four
 - [x] Add `test` script; promote `prompt-craft-smith`'s Vitest files into a gated suite — **85 tests across 12 files, all passing**
@@ -235,7 +235,22 @@ Nothing below is safe without this. A merge touching auth, RLS, and a unified `d
 
 **CI** is `.github/workflows/ci.yml` in each repo: `bun install --frozen-lockfile` → lint → typecheck → test (where it exists) → build, on push to `main` and every PR, no path filter, `cancel-in-progress` concurrency. Every step was verified locally with bun in all four repos before commit; all pass.
 
-**Still open:** the env-validator item, and the deferred key rotation (Blocker #9).
+`bun-version` is deliberately `latest`, not pinned. Vercel builds these repos with its own current bun — **1.3.14** as of 2026-09-17 — and its build log says `Saved lockfile`, meaning it rewrote the lockfile a local bun 1.2.7 produced. Pinning CI below production would let a lockfile pass CI and then get rewritten in production, which is exactly the drift `--frozen-lockfile` exists to catch.
+
+**Vercel deploys confirm the lockfile switch works.** All four rebuilt and reached `Ready` on the Phase 0 commits; Vercel auto-detects bun from `bun.lock` with no config change, so removing `package-lock.json` did not disturb deployment.
+
+**GitHub Actions cannot start in these repos.** Every CI run returns `startup_failure` with `path: "BuildFailed"`. This is **not** a defect in the Phase 0 workflows:
+
+- `actions/checkout@v5` and `oven-sh/setup-bun@v2` both exist; the YAML parses and contains no tabs
+- Actions is enabled with `allowed_actions: "all"` and no SHA-pinning requirement
+- `agent-spec-smith` already had a `startup_failure` on 2026-09-16 against the **previous** SHA `682248a`, before any Phase 0 change existed
+- **Decisive:** an 8-line no-op workflow (`runs-on: ubuntu-latest`, `run: echo ok`), pushed and dispatched manually, also returned `startup_failure`
+
+A no-op workflow cannot fail for authoring reasons, so the cause is account- or org-level — most likely an Actions spending limit or billing issue on the private repos. The billing API needs a `user` OAuth scope the local `gh` token lacks, so it could not be confirmed from here. Note `keep-supabase-warm` last succeeded 2026-09-13.
+
+**Consequence:** the CI gates are committed and every step passes locally and on Vercel, but **no gate is actually enforcing yet.** Phase 0's safety net is not live until Actions runs.
+
+**Still open:** the env-validator item, the Actions billing question, and the deferred key rotation (Blocker #9).
 
 ### Phase 1 — Schema convergence
 
@@ -344,11 +359,12 @@ Also: `devspeak/.github/workflows/web-ci.yml` · `scripts/sync-versions.mjs` · 
 | 2   | **`documents` defined four incompatible ways** | The single largest schema-merge task. `source_tool` is the natural discriminator.                                                                                                                                                                                                                                                           |
 | 3   | **Trigger function name conflict**             | `update_updated_at_column()` vs `set_updated_at()`. Pick one before squashing migrations.                                                                                                                                                                                                                                                   |
 | 4   | **Billing must be built from scratch**         | No provider in any of the four. Only `prompt-craft-smith`'s `usage_events` is reusable.                                                                                                                                                                                                                                                     |
-| 5   | ~~**No test safety net**~~                     | **Resolved in Phase 0.** CI added to all four; `typecheck` everywhere; 85 tests gated in `prompt-craft-smith`. `prompt-craft-smith` types are on a ratchet, not a hard gate.                                                                                                                                                                |
+| 5   | **No test safety net** — partly addressed      | Phase 0 added CI to all four, `typecheck` everywhere, and gated 85 tests in `prompt-craft-smith`. **Nothing enforces yet — see #10.** Three repos still have no test runner.                                                                                                                                                                |
 | 6   | **i18n absent everywhere**                     | Greenfield workstream across four apps of hardcoded English.                                                                                                                                                                                                                                                                                |
 | 7   | **SPAs are invisible to AI crawlers**          | Blocks the marketing thesis until Phase 5 ships.                                                                                                                                                                                                                                                                                            |
 | 8   | ~~**Lockfile drift**~~                         | **Resolved in Phase 0.** bun is canonical; `package-lock.json` removed from all four; every `AGENTS.md` corrected.                                                                                                                                                                                                                          |
 | 9   | 🔴 **Leaked API keys in pushed history**       | `prompt-craft-smith@f992110` committed `.env.backup-lovable`. `ANTHROPIC_API_KEY`, `DEEPSEEK_API_KEY`, and `NVIDIA_API_KEY` are byte-identical to the live values today. Repo is private, so not a public leak. **Rotation deferred by owner.** Rotate before scrubbing history — scrubbing first leaves live keys in every existing clone. |
+| 10  | 🔴 **GitHub Actions will not start**           | All four repos return `startup_failure` / `BuildFailed` — including an 8-line no-op probe and a pre-Phase-0 SHA. Actions is enabled with all actions allowed, so the cause is account- or org-level, likely a spending limit. Blocks every Phase 0 gate from enforcing. Vercel deploys are unaffected and green.                            |
 
 ### Operational notes carried forward
 
